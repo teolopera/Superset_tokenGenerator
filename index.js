@@ -1,14 +1,17 @@
 const express = require('express');
-const fetch = require('node-fetch');
-const cors = require('cors');
+const axios = require('axios');
+//const cors = require('cors');
 
-const PORT = 3001;
+/*const PORT = 3001;
 const app = express();
 app.use(cors());
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+ */
+
+const router = express.Router();
 
 async function fetchAccessToken() {
   try {
@@ -19,18 +22,17 @@ async function fetchAccessToken() {
       refresh: true,
     }
 
-    const response = await fetch(
-      "http://localhost:8088/api/v1/security/login",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+    const response = await axios.post(
+        "http://localhost:8088/api/v1/security/login",
+        body,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
     )
 
-    const jsonResponse = await response.json()
+    const jsonResponse = response.data;
     return jsonResponse?.access_token
   } catch (e) {
     console.error(error)
@@ -58,25 +60,42 @@ async function fetchGuestToken() {
         last_name: "user",
       },
     }
-    const response = await fetch(
-      "http://localhost:8088/api/v1/security/guest_token",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
+    const response = await axios.post(
+        "http://localhost:8088/api/v1/security/guest_token",
+        body,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
     )
-    const jsonResponse = await response.json()
+    const jsonResponse = response.data;
     return jsonResponse?.token
   } catch (error) {
     console.error(error)
   }
 }
 
-app.get("/guest-token", async (req, res) => {
-  const token = await fetchGuestToken()
+async function getRickAndMortyCharacters() {
+  try {
+    const response = await axios.get('https://rickandmortyapi.com/api/character');
+    return response.data.results;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+router.get("/", async (req, res) => {
+  const token = await getRickAndMortyCharacters()
   res.json(token)
 })
+
+module.exports = router;
+
+/*app.get("/guest-token", async (req, res) => {
+  const token = await getRickAndMortyCharacters()
+  res.json(token)
+})
+
+ */
